@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semáforo de Concentração - WorkStatus Light</title>
+    <style>
+        :root {
+            --color-livre: #00b500;
+            --color-ocupado: #fbbf24;
+            --color-foco: #ef4444;
+            --color-reuniao: #dc2626;
+            --color-bg: #0f172a;
+            --color-card: #1e293b;
+            --color-text: #f1f5f9;
+            --color-text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: var(--color-card);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--color-text);
+        }
+
+        /* Status Principal */
+        .status-main {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .semaforo {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4em;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .semaforo::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .semaforo.LIVRE {
+            background: var(--color-livre);
+            box-shadow: 0 0 60px rgba(0, 181, 0, 0.6);
+        }
+
+        .semaforo.OCUPADO {
+            background: var(--color-ocupado);
+            box-shadow: 0 0 60px rgba(251, 191, 36, 0.6);
+        }
+
+        .semaforo.FOCO {
+            background: var(--color-foco);
+            box-shadow: 0 0 60px rgba(239, 68, 68, 0.6);
+            animation: pulse-red 2s infinite;
+        }
+
+        .semaforo.REUNIAO {
+            background: var(--color-reuniao);
+            box-shadow: 0 0 60px rgba(220, 38, 38, 0.6);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 60px rgba(239, 68, 68, 0.6); }
+            50% { box-shadow: 0 0 80px rgba(239, 68, 68, 0.9); }
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 99% { opacity: 0.3; }
+        }
+
+        .status-text {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .status-desc {
+            font-size: 1.1em;
+            color: var(--color-text-secondary);
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        /* Gauge LDR */
+        .gauge-container {
+            margin-top: 20px;
+        }
+
+        .gauge-wrapper {
+            position: relative;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-foco) 0%, var(--color-ocupado) 50%, var(--color-livre) 100%);
+            border-radius: 20px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .gauge-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            font-size: 1.1em;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        /* Controles */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .btn-control {
+            padding: 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-control:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-control:active {
+            transform: translateY(0);
+        }
+
+        .btn-livre { background: var(--color-livre); }
+        .btn-ocupado { background: var(--color-ocupado); }
+        .btn-foco { background: var(--color-foco); }
+        .btn-reuniao { background: var(--color-reuniao); }
+
+        .btn-icon {
+            font-size: 2em;
+        }
+
+        /* Histórico */
+        .history-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 5px solid;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-state {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .history-time {
+            color: var(--color-text-secondary);
+            font-size: 0.9em;
+        }
+
+        /* Status de Conexão */
+        .connection-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .connection-badge.connected {
+            background: var(--color-livre);
+        }
+
+        .connection-badge.error {
+            background: var(--color-foco);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: white;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Mapa de Equipe */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .desk-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+
+        .desk-card:hover {
+            transform: scale(1.05);
+        }
+
+        .desk-status {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+        }
+
+        .desk-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .desk-time {
+            font-size: 0.8em;
+            color: var(--color-text-secondary);
+        }
+
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .semaforo {
+                width: 150px;
+                height: 150px;
+                font-size: 3em;
+            }
+        }
+
+        /* Scrollbar customizada */
+        .history-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Semáforo de Concentração</h1>
+            <p>Sistema IoT para Ambientes Híbridos e Coworking</p>
+            <div class="connection-badge" id="connectionStatus">
+                <span class="status-dot"></span>
+                <span>Conectando...</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Status -->
+            <div class="card">
+                <h2>Status do Posto</h2>
+                <div class="status-main">
+                    <div class="semaforo" id="semaforo">
+                        <span id="semaforoIcon"></span>
+                    </div>
+                    <div class="status-text" id="statusText">Aguardando...</div>
+                    <div class="status-desc" id="statusDesc">Conectando...</div>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Tempo</div>
+                        <div class="info-value" id="timeInState">--</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Presença</div>
+                        <div class="info-value" id="presence">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LDR -->
+            <div class="card">
+                <h2>Detecção de Presença (LDR)</h2>
+                <div class="gauge-container">
+                    <div class="gauge-wrapper">
+                        <div class="gauge-fill" id="gaugeFill"></div>
+                        <div class="gauge-value" id="gaugeValue">0</div>
+                    </div>
+                </div>
+                <div class="info-grid" style="margin-top: 20px;">
+                    <div class="info-item">
+                        <div class="info-label">Valor Atual</div>
+                        <div class="info-value" id="ldrRaw">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Status</div>
+                        <div class="info-value" id="ldrStatus">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controle -->
+        <div class="card">
+            <h2>Controle Remoto</h2>
+            <div class="controls-grid">
+                <button class="btn-control btn-livre" onclick="sendCommand('LIVRE')">
+                    <span class="btn-icon"></span>
+                    <span>LIVRE</span>
+                    <small>Disponível</small>
+                </button>
+                <button class="btn-control btn-ocupado" onclick="sendCommand('OCUPADO')">
+                    <span class="btn-icon"></span>
+                    <span>OCUPADO</span>
+                    <small>Pode interromper</small>
+                </button>
+                <button class="btn-control btn-foco" onclick="sendCommand('FOCO')">
+                    <span class="btn-icon"></span>
+                    <span>FOCO</span>
+                    <small>Não interromper</small>
+                </button>
+                <button class="btn-control btn-reuniao" onclick="sendCommand('REUNIAO')">
+                    <span class="btn-icon"></span>
+                    <span>REUNIÃO</span>
+                    <small>Em reunião</small>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Histórico -->
+            <div class="card">
+                <h2>Histórico de Mudanças</h2>
+                <div class="history-list" id="historyList">
+                    <p style="text-align:center; color: var(--color-text-secondary); padding: 20px;">
+                        Nenhuma mudança registrada ainda
+                    </p>
+                </div>
+            </div>
+
+            <!-- Mapa da Equipe -->
+            <div class="card">
+                <h2>Mapa da Equipe</h2>
+                <div class="team-grid" id="teamMap">
+                    <!-- Dinâmico -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIGURAÇÃO ==========
+        const CONFIG = {
+            nodeRedUrl: 'http://localhost:1880',  // URL do Node-RED
+            updateInterval: 2000,  // Atualiza a cada 2 segundos
+            desk01Topic: 'office/desk01/status',
+            cmdTopic: 'office/desk01/cmd'
+        };
+
+        // ========== ESTADO GLOBAL ==========
+        let state = {
+            currentState: null,
+            stateChangeTime: null,
+            history: [],
+            lastUpdate: null,
+            isConnected: false
+        };
+
+        // ========== DESCRIÇÕES DOS ESTADOS ==========
+        const stateDescriptions = {
+            'LIVRE': 'Disponível para conversas e interações',
+            'OCUPADO': 'Trabalhando, mas pode ser interrompido se urgente',
+            'FOCO': 'Concentração profunda - Por favor, não interromper',
+            'REUNIAO': 'Em reunião ou chamada de vídeo'
+        };
+
+        const stateIcons = {
+            'LIVRE': '✅',
+            'OCUPADO': '⏰',
+            'FOCO': '🚫',
+            'REUNIAO': '👥'
+        };
+
+        // ========== POLLING DE DADOS ==========
+        async function fetchStatus() {
+            try {
+                // Tenta buscar dados do Node-RED
+                // Você precisará criar um endpoint HTTP no Node-RED que retorna o último status
+                const response = await fetch(`${CONFIG.nodeRedUrl}/workstatus/current`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateConnectionStatus(true);
+                    updateDashboard(data);
+                } else {
+                    console.warn('Node-RED endpoint não disponível, usando dados de teste');
+                    updateConnectionStatus(false);
+                    // Simula dados para teste
+                    simulateData();
+                }
+            } catch (error) {
+                console.error('Erro ao buscar status:', error);
+                updateConnectionStatus(false);
+                // Simula dados para teste
+                simulateData();
+            }
+        }
+
+        // ========== SIMULAR DADOS (para teste sem Node-RED) ==========
+        function simulateData() {
+            const states = ['LIVRE', 'OCUPADO', 'FOCO', 'REUNIAO'];
+            const randomState = states[Math.floor(Math.random() * states.length)];
+            const randomLDR = Math.floor(Math.random() * 1023);
+            
+            const mockData = {
+                ID: '01',
+                STATE: randomState,
+                LDR: randomLDR.toString(),
+                TS: Date.now().toString(),
+                timestamp: new Date().toISOString()
+            };
+            
+            // Só atualiza se mudou
+            if (state.currentState !== randomState) {
+                updateDashboard(mockData);
+            }
+        }
+
+        // ========== ATUALIZAR DASHBOARD ==========
+        function updateDashboard(data) {
+            const newState = data.STATE;
+            const ldrValue = parseInt(data.LDR) || 0;
+
+            // Atualizar semáforo
+            const semaforo = document.getElementById('semaforo');
+            const icon = document.getElementById('semaforoIcon');
+            const statusText = document.getElementById('statusText');
+            const statusDesc = document.getElementById('statusDesc');
+
+            semaforo.className = 'semaforo ' + newState;
+            icon.textContent = stateIcons[newState] || '❓';
+            statusText.textContent = newState;
+            statusDesc.textContent = stateDescriptions[newState] || '';
+
+            // Detectar mudança de estado
+            if (state.currentState !== newState) {
+                addToHistory(newState);
+                state.currentState = newState;
+                state.stateChangeTime = Date.now();
+            }
+
+            // Atualizar LDR
+            updateLDR(ldrValue);
+
+            // Atualizar presença
+            const presence = ldrValue > 100 ? '✅' : '❌';
+            document.getElementById('presence').textContent = presence;
+
+            // Atualizar timestamp
+            state.lastUpdate = Date.now();
+        }
+
+        // ========== ATUALIZAR LDR ==========
+        function updateLDR(value) {
+            const percent = (value / 1023) * 100;
+            const fill = document.getElementById('gaugeFill');
+            const gaugeValue = document.getElementById('gaugeValue');
+            const ldrRaw = document.getElementById('ldrRaw');
+            const ldrStatus = document.getElementById('ldrStatus');
+
+            fill.style.width = percent + '%';
+            gaugeValue.textContent = value;
+            ldrRaw.textContent = value;
+
+            // Status baseado no valor
+            if (value < 100) {
+                ldrStatus.textContent = '🌙 Ausente';
+            } else if (value < 300) {
+                ldrStatus.textContent = '🌥️ Baixa';
+            } else if (value < 700) {
+                ldrStatus.textContent = '☀️ Média';
+            } else {
+                ldrStatus.textContent = '🔆 Alta';
+            }
+        }
+
+        // ========== CONTADOR DE TEMPO ==========
+        function updateTimeCounter() {
+            if (state.stateChangeTime) {
+                const elapsed = Math.floor((Date.now() - state.stateChangeTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timeInState').textContent = 
+                    `${minutes}m ${seconds}s`;
+            }
+        }
+
+        // ========== HISTÓRICO ==========
+        function addToHistory(newState) {
+            const now = new Date();
+            const entry = {
+                state: newState,
+                time: now.toLocaleTimeString('pt-BR'),
+                timestamp: now.getTime()
+            };
+
+            state.history.unshift(entry);
+
+            // Mantém apenas últimas 15 mudanças
+            if (state.history.length > 15) {
+                state.history = state.history.slice(0, 15);
+            }
+
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const historyList = document.getElementById('historyList');
+            
+            if (state.history.length === 0) {
+                historyList.innerHTML = `
+                    <p style="text-align:center; color: var(--color-text-secondary); padding: 20px;">
+                        Nenhuma mudança registrada ainda
+                    </p>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = state.history.map(entry => {
+                const color = getStateColor(entry.state);
+                return `
+                    <div class="history-item" style="border-color: ${color};">
+                        <div class="history-state">
+                            <span style="font-size: 1.5em;">${stateIcons[entry.state]}</span>
+                            <span>${entry.state}</span>
+                        </div>
+                        <div class="history-time">${entry.time}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getStateColor(stateName) {
+            const colors = {
+                'LIVRE': 'var(--color-livre)',
+                'OCUPADO': 'var(--color-ocupado)',
+                'FOCO': 'var(--color-foco)',
+                'REUNIAO': 'var(--color-reuniao)'
+            };
+            return colors[stateName] || '#999';
+        }
+
+        // ========== ENVIAR COMANDO ==========
+        async function sendCommand(command) {
+            try {
+                // Tenta enviar via Node-RED HTTP endpoint
+                const response = await fetch(`${CONFIG.nodeRedUrl}/workstatus/command`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: `CMD:${command}` })
+                });
+
+                if (response.ok) {
+                    console.log('✅ Comando enviado:', command);
+                    showFeedback(event.target, '✓ Enviado!');
+                } else {
+                    console.error('❌ Erro ao enviar comando');
+                    showFeedback(event.target, '✗ Erro!');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                console.log('💡 Simulando envio de comando:', command);
+                showFeedback(event.target, '✓ Simulado!');
+                
+                // Simula mudança imediata
+                updateDashboard({
+                    STATE: command,
+                    LDR: Math.floor(Math.random() * 1023),
+                    ID: '01',
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        function showFeedback(button, message) {
+            const originalHTML = button.innerHTML;
+            button.innerHTML = `<span style="font-size: 2em;">${message}</span>`;
+            setTimeout(() => {
+                button.innerHTML = originalHTML;
+            }, 1500);
+        }
+
+        // ========== STATUS DE CONEXÃO ==========
+        function updateConnectionStatus(connected) {
+            state.isConnected = connected;
+            const badge = document.getElementById('connectionStatus');
+            
+            if (connected) {
+                badge.className = 'connection-badge connected';
+                badge.innerHTML = '<span class="status-dot"></span><span>✅ Conectado</span>';
+            } else {
+                badge.className = 'connection-badge error';
+                badge.innerHTML = '<span class="status-dot"></span><span>🔄 Modo Demo</span>';
+            }
+        }
+
+        // ========== MAPA DA EQUIPE ==========
+        function initTeamMap() {
+            const teamMap = document.getElementById('teamMap');
+            const desks = [
+                { id: '01', name: 'Posto 1', state: 'LIVRE' },
+                { id: '02', name: 'Posto 2', state: 'OCUPADO' },
+                { id: '03', name: 'Posto 3', state: 'FOCO' },
+                { id: '04', name: 'Posto 4', state: 'LIVRE' }
+            ];
+
+            teamMap.innerHTML = desks.map(desk => {
+                const color = getStateColor(desk.state);
+                return `
+                    <div class="desk-card" style="border-color: ${color};">
+                        <div class="desk-status" style="background: ${color};">
+                            ${stateIcons[desk.state]}
+                        </div>
+                        <div class="desk-label">${desk.name}</div>
+                        <div class="desk-time">${desk.state}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ========== INICIALIZAÇÃO ==========
+        function init() {
+            console.log('🚀 Iniciando Semáforo de Concentração...');
+            
+            initTeamMap();
+            
+            fetchStatus();
+            setInterval(fetchStatus, CONFIG.updateInterval);
+            
+            setInterval(updateTimeCounter, 1000);
+            
+            console.log('✅ Dashboard iniciado em modo híbrido (HTTP + Simulação)');
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
