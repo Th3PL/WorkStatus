@@ -23,9 +23,8 @@ O projeto integra **sensores (LDR)** para detectar presença, **botões físicos
 
 ## 📹 Vídeo Demonstrativo
 
-[![YouTube](https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/seu-link-aqui)
+[![YouTube](https://img.shields.io/badge/YouTube-Assista%20aqui-red?style=for-the-badge&logo=youtube)](https://youtu.be/seu-link-aqui)
 
-**Link:** [https://youtu.be/seu-link-aqui](https://youtu.be/seu-link-aqui)
 
 ---
 
@@ -114,65 +113,7 @@ node-red-contrib-ui-led (opcional)
 
 ### Diagrama de Fluxo de Dados
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     CAMADA FÍSICA                           │
-├─────────────────────────────────────────────────────────────┤
-│  Arduino (Hardware)                                         │
-│  ├─ LED RGB (Saída Visual)                                 │
-│  ├─ LCD (Display)                                          │
-│  ├─ Botões (Entrada)                                       │
-│  ├─ LDR (Sensor)                                           │
-│  └─ Buzzer (Feedback Sonoro)                               │
-└────────────┬────────────────────────────────────────────────┘
-             │ Serial (UART 115200 baud)
-             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  CAMADA DE BRIDGE                           │
-├─────────────────────────────────────────────────────────────┤
-│  Python Bridge (workStatus_bridge.py)                       │
-│  ├─ Lê dados do Arduino via Serial                         │
-│  ├─ Parse do protocolo customizado                         │
-│  └─ Publica em MQTT (office/desk01/status)                 │
-└────────────┬────────────────────────────────────────────────┘
-             │ MQTT (porta 1883)
-             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 CAMADA DE COMUNICAÇÃO                       │
-├─────────────────────────────────────────────────────────────┤
-│  Mosquitto Broker MQTT                                      │
-│  ├─ Tópicos:                                               │
-│  │  ├─ office/desk01/status (Arduino → Dashboard)          │
-│  │  └─ office/desk01/cmd (Dashboard → Arduino)             │
-│  └─ QoS: 1 (Garantia de Entrega)                           │
-└────────────┬────────────────────────────────────────────────┘
-             │ MQTT
-             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                CAMADA DE PROCESSAMENTO                      │
-├─────────────────────────────────────────────────────────────┤
-│  Node-RED Flow                                              │
-│  ├─ Subscreve a office/desk01/status                       │
-│  ├─ Processa e formata dados                               │
-│  ├─ Exponibiliza endpoints HTTP:                           │
-│  │  ├─ GET /workstatus/current → Status atual              │
-│  │  └─ POST /workstatus/command → Enviar comandos          │
-│  └─ Armazena histórico em flow                             │
-└────────────┬────────────────────────────────────────────────┘
-             │ HTTP (porta 1880)
-             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  CAMADA DE APRESENTAÇÃO                     │
-├─────────────────────────────────────────────────────────────┤
-│  Dashboard Web (index.html)                                 │
-│  ├─ Polling HTTP a cada 500ms                              │
-│  ├─ Visualização do estado                                 │
-│  ├─ Controle remoto (4 botões)                             │
-│  ├─ Gauge de luminosidade                                  │
-│  ├─ Histórico de mudanças                                  │
-│  └─ Mapa da equipe                                         │
-└─────────────────────────────────────────────────────────────┘
-```
+![Diagrama_arquitetura](./img/Diagrama_de_arquitetura.png)
 
 ### Protocolo de Comunicação
 
@@ -287,28 +228,14 @@ Professores podem indicar quando estão em aula gravada (modo FOCO).
 | **Poder Consumido** | ~500mW | Operação normal com LED aceso |
 | **Conexões MQTT Simultâneas** | 50+ | Escalabilidade (múltiplos postos) |
 
----
-
-## 🧪 Testes Implementados
-
-- ✅ Teste de Hardware (LED, LCD, Buzzer, Botões)
-- ✅ Teste de Comunicação Serial (Arduino ↔ Python)
-- ✅ Teste de Broker MQTT (Pub/Sub)
-- ✅ Teste de Dashboard (Atualização em tempo real)
-- ✅ Teste End-to-End (Fluxo completo físico → digital)
-- ✅ Teste de Estresse (30min+ operação contínua)
-
----
 
 ## 👥 Membros do Grupo
 
-| Nome | Papel | Responsabilidades |
-|------|-------|-------------------|
-| **[Seu Nome]** | **[Papel]** | Arduino, Hardware |
-| **[Colega 1]** | **[Papel]** | Bridge Python, MQTT |
-| **[Colega 2]** | **[Papel]** | Node-RED, Backend |
-| **[Colega 3]** | **[Papel]** | Dashboard, Frontend |
-
+| Nome                                | RM       |
+|-------------------------------------|----------|
+| ⚡ João Pedro Borsato Cruz           | RM550294 |
+| 💫 Maria Fernanda Vieira de Camargo | RM97956  |
+| 🚀 Pedro Lucas de Andrade Nunes     | RM550366 |
 ---
 
 ## 📚 Referências
@@ -339,41 +266,30 @@ Sugestões e melhorias são bem-vindas! Para contribuir:
 
 ---
 
-## 📞 Suporte
-
-Para dúvidas ou problemas:
-- 📧 Email: seu-email@exemplo.com
-- 💬 Issues: [GitHub Issues](https://github.com/seu-usuario/workstatus-light/issues)
-- 📱 WhatsApp: [Seu contato]
-
----
-
 ## 🎯 Roadmap Futuro
 
-- [ ] Suporte para múltiplos postos (desk02, desk03, etc)
 - [ ] Integração com Google Calendar
 - [ ] Notificações push no celular
 - [ ] Estatísticas de produtividade
 - [ ] API pública para integrações
 - [ ] Modo dark/light no dashboard
 - [ ] Suporte a múltiplas linguagens
-- [ ] App mobile nativa
+
 
 ---
 
 ## 📷 Galeria
 
 ### Hardware
-![Hardware Setup](./images/hardware.jpg)
+![Hardware](./img/hardware.jpeg)
 
 ### Dashboard
-![Dashboard Screenshot](./images/dashboard.png)
+![Dashboard](./img/dashboard.png)
 
-### LED States
-![LED States](./images/led-states.png)
+### Fluxo Node Red
+![Fluxo node-red](./img/node-red.png)
 
 ---
 
 **Desenvolvido com ❤️ para o GLOBAL SOLUTIONS 2025 - O FUTURO DO TRABALHO**
 
-*Última atualização: 20 de Novembro de 2025*
