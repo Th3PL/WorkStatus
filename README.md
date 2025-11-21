@@ -23,7 +23,7 @@ O projeto integra **sensores (LDR)** para detectar presença, **botões físicos
 
 ## 📹 Vídeo Demonstrativo
 
-[![YouTube](https://img.shields.io/badge/YouTube-Assista%20aqui-red?style=for-the-badge&logo=youtube)](https://youtu.be/seu-link-aqui)
+[![YouTube](https://img.shields.io/badge/YouTube-Assista%20aqui-red?style=for-the-badge&logo=youtube)](https://youtu.be/NMvSSroa6tg)
 
 
 ---
